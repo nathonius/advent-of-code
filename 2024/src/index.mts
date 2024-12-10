@@ -6,6 +6,7 @@ import { day5 } from "./day5/index.mjs";
 import { day6 } from "./day6/index.mjs";
 import { day7 } from "./day7/index.mjs";
 import { day8 } from "./day8/index.mjs";
+import { day9 } from "./day9/index.mjs";
 
 console.time("Run");
 // await day1();
@@ -15,5 +16,6 @@ console.time("Run");
 // await day5();
 // await day6();
 // await day7();
-await day8();
+// await day8();
+await day9();
 console.timeEnd("Run");

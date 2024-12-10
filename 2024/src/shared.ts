@@ -88,6 +88,12 @@ export function toSpliced<T>(
   return newArr;
 }
 
+export function arraySwap<T>(source: T[], a: number, b: number): void {
+  const temp = source[a];
+  source[a] = source[b];
+  source[b] = temp;
+}
+
 export function renderMap(map: string[] | string[][]): void {
   for (const line of map) {
     for (const pos of line) {
