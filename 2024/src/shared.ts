@@ -23,6 +23,13 @@ export const DIR_TO_DELTA: Record<Direction, Coord> = {
   SW: { x: -1, y: 1 },
 };
 
+export const SIMPLE_DIR_TO_DELTA: Record<SimpleDirection, Coord> = {
+  N: DIR_TO_DELTA["N"],
+  E: DIR_TO_DELTA["E"],
+  S: DIR_TO_DELTA["S"],
+  W: DIR_TO_DELTA["W"],
+};
+
 export const DIR_PLUS_90: Record<SimpleDirection, Direction> = {
   N: "E",
   E: "S",
@@ -52,10 +59,41 @@ export function coordsMatch(a: Coord, b: Coord): boolean {
   return a.x === b.x && a.y === b.y;
 }
 
-type Mappish = string[] | string[][];
+export function multiplyCoord(a: Coord, b: number): Coord {
+  return { x: a.x * b, y: a.y * b };
+}
 
-export function isValidCoordinate(map: Mappish, coord: Coord): boolean {
+export function modCoord(a: Coord, b: number): Coord {
+  return { x: a.x % b, y: a.y % b };
+}
+
+export type Mappish<T extends string | number> = T extends string
+  ? string[] | string[][]
+  : number[][];
+
+export function getSurroundingCoordinates(
+  map: Mappish<any>,
+  coord: Coord,
+  diagonals = false,
+  includeInvalid = false
+): Coord[] {
+  const deltas = diagonals ? DIR_TO_DELTA : SIMPLE_DIR_TO_DELTA;
+  const surrounding: Coord[] = [];
+  for (const delta of Object.values(deltas)) {
+    const val = coordDelta(coord, delta);
+    if (includeInvalid || isValidCoordinate(map, val)) {
+      surrounding.push(val);
+    }
+  }
+  return surrounding;
+}
+
+export function isValidCoordinate<T extends string | number>(
+  map: Mappish<T>,
+  coord: Coord
+): boolean {
   return (
+    coord !== undefined &&
     coord.x >= 0 &&
     coord.y >= 0 &&
     coord.y < map.length &&
@@ -63,16 +101,32 @@ export function isValidCoordinate(map: Mappish, coord: Coord): boolean {
   );
 }
 
-export function valueAtCoord(map: Mappish, coord: Coord): string | null {
+export function uniqueCoords(coords: Coord[]): Coord[] {
+  let unique: Coord[] = [];
+  for (const c of coords) {
+    if (!unique.some((u) => coordsMatch(u, c))) {
+      unique.push(c);
+    }
+  }
+  return unique;
+}
+
+export function valueAtCoord<T extends string | number>(
+  map: Mappish<T>,
+  coord: Coord
+): T | null {
   if (!isValidCoordinate(map, coord)) {
     return null;
   }
-  return map[coord.y][coord.x];
+  return map[coord.y][coord.x] as T;
 }
 
-export function valueAtCoordOrThrow(map: Mappish, coord: Coord): string {
+export function valueAtCoordOrThrow<T extends string | number>(
+  map: Mappish<T>,
+  coord: Coord
+): T {
   const value = valueAtCoord(map, coord);
-  if (value === null) {
+  if (value === null || value === undefined) {
     throw new Error(`Invalid coordinate ${coord.x},${coord.y}`);
   }
   return value;
@@ -117,6 +171,23 @@ export function getLargest(values: number[]): number {
 
 export function getDirname() {
   return resolve(dirname(fileURLToPath(import.meta.url)), "..");
+}
+
+type MapOutputType<T extends "string" | "number"> = T extends "string"
+  ? string
+  : number;
+export async function readMapInput<T extends "string" | "number">(
+  path: string,
+  outputType: T
+): Promise<MapOutputType<T>[][]> {
+  const lines = await readInput(path);
+  const mappish = lines.map((l) => Array.from(l));
+  if (outputType === "number") {
+    return mappish.map((row) =>
+      row.map((val) => parseInt(val))
+    ) as MapOutputType<T>[][];
+  }
+  return mappish as MapOutputType<T>[][];
 }
 
 export async function readInput(
